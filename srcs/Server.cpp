@@ -189,3 +189,8 @@ void    Server::handleCommand(Client& client, const std::string& line)
     //garantizado que recibe una linia completa :D
     std::cout << client.getFd() << ": " << line << std::endl;
 }
+
+void    Server::reply(Client& client, const std::string& msg)
+{
+    client.appendOutput(msg + "\r\n");
+}

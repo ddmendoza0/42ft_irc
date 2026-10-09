@@ -18,3 +18,9 @@ vuelvete loco
 config no volatil (persistence)
 mkdir -p ~/weechat-conf
 docker run -it --rm --network host -v ~/weechat-conf:/home/user/.weechat weechat/weechat
+
+
+ddm: el handle command es faena de alguien otro pls
+
+PROXIMOS PASOS
+ddm: buffer de salida que de momento es un minitalk en esteroides.
