@@ -1,0 +1,12 @@
+conectarse al cumbion este
+/server add ircserv 127.0.0.1/6667 -notls -password=yourpass
+/set irc.server.ircserv.nicks "ddm"
+/connect ircserv
+/server raw
+
+open weechat
+docker run -it --rm --network host weechat/weechat
+
+config no volatil (persistence)
+mkdir -p ~/weechat-conf
+docker run -it --rm --network host -v ~/weechat-conf:/home/user/.weechat weechat/weechat
