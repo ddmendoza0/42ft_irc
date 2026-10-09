@@ -13,6 +13,10 @@ Server::~Server( void )
         if ( _pfds[i].fd != _listenFd )
             close(_pfds[i].fd);
     }
+
+    for ( std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it  )
+        delete it->second;
+    _clients.clear();
 }
 
 void    Server::init( void )
@@ -63,10 +67,8 @@ void    Server::run( void )
             if ( _pfds[i].fd == _listenFd )
             {
                 if ( _pfds[i].revents & POLLIN )
-                {
                     acceptClient();
-                    continue;
-                }
+                continue;
             }
             
             if ( _pfds[i].revents & POLLIN )
@@ -85,7 +87,10 @@ void    Server::run( void )
 
 void    Server::acceptClient( void )
 {
-    int new_fd = accept(_listenFd, NULL, NULL);
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(addr);
+
+    int new_fd = accept(_listenFd, reinterpret_cast<struct sockaddr*>(&addr), &len);
     if ( new_fd < 0 )
     {
         std::cerr << "Error: could not accept Client" << std::endl;
@@ -99,13 +104,26 @@ void    Server::acceptClient( void )
         return ;
     }
 
+    std::string hostname = inet_ntoa(addr.sin_addr);
+
+    try
+    {
+        _clients[new_fd] = new Client(new_fd, hostname);
+    }
+    catch ( const std::bad_alloc& )
+    {
+        close(new_fd);
+        std::cerr << "Error: memory allocation error" << std::endl;
+        return ;
+    }
+
     pollfd p;
     p.fd = new_fd;
     p.events = POLLIN;
     p.revents = 0;
     _pfds.push_back(p);
 
-    std::cout << "Someones knocking " << new_fd << std::endl;
+    std::cout << "Someones knocking " << hostname << std::endl;
 
     return ;
 }
@@ -129,6 +147,15 @@ bool    Server::readFromClient(size_t i)
 
 void    Server::removeClient(size_t i)
 {
-    close(_pfds[i].fd);
+    int fd = _pfds[i].fd;
+
+    std::map<int, Client*>::iterator it = _clients.find(fd);
+    if ( it != _clients.end() )
+    {
+        delete it->second;
+        _clients.erase(it);
+    }
+
+    close(fd);
     _pfds.erase(_pfds.begin() + i);
 }
