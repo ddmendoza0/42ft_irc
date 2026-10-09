@@ -140,8 +140,32 @@ bool    Server::readFromClient(size_t i)
         return ( true );
     }
     
-    std::string data(buf, ret);
-    std::cout << _pfds[i].fd << " " << data << std::endl;
+    std::map<int, Client*>::iterator it = _clients.find(_pfds[i].fd);
+    if ( it == _clients.end() )
+        return ( false );
+    Client* client = it->second;
+    client->appendInput(std::string(buf, ret));
+
+    std::string& in = client->getInBuf();
+    size_t pos;
+    while ( (pos = in.find('\n')) != std::string::npos )
+    {
+        std::string line = in.substr(0, pos);
+        in.erase(0, pos + 1);
+        if ( !line.empty() && line[line.size() - 1] == '\r' )
+            line.erase(line.size() - 1);
+        if ( line.empty() )
+            continue ;
+
+        handleCommand(*client, line);
+    }
+    if ( in.size() > 512 )
+    {
+        std::cerr << "Client fd " << _pfds[i].fd << " exceeded 512 bytes, dropping" << std::endl;
+        removeClient(i);
+        return ( true );
+    }
+
     return  ( false );
 }
 
@@ -158,4 +182,10 @@ void    Server::removeClient(size_t i)
 
     close(fd);
     _pfds.erase(_pfds.begin() + i);
+}
+
+void    Server::handleCommand(Client& client, const std::string& line)
+{
+    //garantizado que recibe una linia completa :D
+    std::cout << client.getFd() << ": " << line << std::endl;
 }

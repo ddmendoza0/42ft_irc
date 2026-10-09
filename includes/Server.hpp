@@ -32,6 +32,7 @@ class Server {
         void    acceptClient(void);
         bool    readFromClient(size_t i);
         void    removeClient(size_t i);
+        void    handleCommand(Client& client, const std::string& line);
 
     public:
         Server(int port, const std::string& pwd);
