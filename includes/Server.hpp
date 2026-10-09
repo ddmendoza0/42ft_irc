@@ -24,6 +24,8 @@ class Server {
         Server& operator=(const Server& other);
 
         void    acceptClient(void);
+        bool    readFromClient(size_t i);
+        void    removeClient(size_t i);
 
     public:
         Server(int port, const std::string& pwd);

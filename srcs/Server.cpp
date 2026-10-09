@@ -60,13 +60,25 @@ void    Server::run( void )
 
         for ( size_t i = 0; i < _pfds.size(); i++ )
         {
-            if ( !(_pfds[i].revents & POLLIN) )
-                continue ;
-
             if ( _pfds[i].fd == _listenFd )
-                acceptClient();
-            else
-                std::cout << "WHAT?! " << _pfds[i].fd << std::endl;
+            {
+                if ( _pfds[i].revents & POLLIN )
+                {
+                    acceptClient();
+                    continue;
+                }
+            }
+            
+            if ( _pfds[i].revents & POLLIN )
+            {
+                if ( readFromClient(i) )
+                    i--;
+            }
+            else if ( _pfds[i].revents & ( POLLHUP | POLLERR ) )
+            {
+                removeClient(i);
+                i--;
+            }
         }
     }
 }
@@ -96,4 +108,27 @@ void    Server::acceptClient( void )
     std::cout << "Someones knocking " << new_fd << std::endl;
 
     return ;
+}
+
+bool    Server::readFromClient(size_t i)
+{
+    char buf[512];
+
+    ssize_t ret = recv(_pfds[i].fd, buf, sizeof(buf), 0);
+    if ( ret <= 0 )
+    {
+        std::cout << _pfds[i].fd << " disconected" << std::endl;
+        removeClient(i);
+        return ( true );
+    }
+    
+    std::string data(buf, ret);
+    std::cout << _pfds[i].fd << " " << data << std::endl;
+    return  ( false );
+}
+
+void    Server::removeClient(size_t i)
+{
+    close(_pfds[i].fd);
+    _pfds.erase(_pfds.begin() + i);
 }
