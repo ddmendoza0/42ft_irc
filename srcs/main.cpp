@@ -1,6 +1,7 @@
 // main.cpp
 #include <string>
 #include <cctype>
+#include <csignal>
 #include <cstdlib>
 #include <iostream>
 
@@ -38,6 +39,9 @@ int main( int argc, char *argv[] )
     try
     {
         server.init();
+
+        signal(SIGPIPE, SIG_IGN);
+
         server.run();
     }
     catch ( const std::exception& e )

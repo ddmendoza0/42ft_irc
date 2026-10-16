@@ -33,7 +33,8 @@ class Server {
         bool    readFromClient(size_t i);
         void    removeClient(size_t i);
         void    handleCommand(Client& client, const std::string& line);
-        void    reply(Client& client, const std::string& msg);
+        bool    writeToClient(size_t i);
+        void    setPollOut(int fd, bool on);
 
     public:
         Server(int port, const std::string& pwd);
@@ -41,5 +42,7 @@ class Server {
 
         void    init(void);
         void    run(void);
+        void    reply(Client& client, const std::string& msg);
+
 
 };

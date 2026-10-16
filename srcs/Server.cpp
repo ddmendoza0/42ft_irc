@@ -64,6 +64,7 @@ void    Server::run( void )
 
         for ( size_t i = 0; i < _pfds.size(); i++ )
         {
+            //server listener
             if ( _pfds[i].fd == _listenFd )
             {
                 if ( _pfds[i].revents & POLLIN )
@@ -71,10 +72,22 @@ void    Server::run( void )
                 continue;
             }
             
+            //client
             if ( _pfds[i].revents & POLLIN )
             {
                 if ( readFromClient(i) )
+                {
                     i--;
+                    continue ;
+                }
+            }
+            else if ( _pfds[i].revents & POLLOUT )
+            {
+                if ( writeToClient(i) )
+                {
+                    i--;
+                    continue ;
+                }
             }
             else if ( _pfds[i].revents & ( POLLHUP | POLLERR ) )
             {
@@ -188,9 +201,56 @@ void    Server::handleCommand(Client& client, const std::string& line)
 {
     //garantizado que recibe una linia completa :D
     std::cout << client.getFd() << ": " << line << std::endl;
+    reply( client, "echo: " + line );
 }
 
-void    Server::reply(Client& client, const std::string& msg)
+void    Server::setPollOut(int fd, bool on)
 {
-    client.appendOutput(msg + "\r\n");
+    for ( size_t i = 0; i < _pfds.size(); i++ )
+    {
+        if ( _pfds[i].fd != fd ) 
+            continue;
+        
+        if ( on )
+            _pfds[i].events |= POLLOUT;
+        else
+            _pfds[i].events &= ~POLLOUT;
+    }
+
+    return ;
+}
+
+void    Server::reply( Client& client, const std::string& msg )
+{
+    client.appendOutput( msg + "\r\n" );
+    setPollOut( client.getFd(), true );
+}
+
+bool    Server::writeToClient( size_t i )
+{
+    std::map<int, Client*>::iterator it = _clients.find(_pfds[i].fd);
+    if ( it == _clients.end() )
+        return ( false );
+    Client* client = it->second;
+    int     fd = client->getFd();
+
+    std::string& out = client->getOutBuf();
+    if ( out.empty() )
+    {
+        setPollOut(fd, false);
+        return ( false );
+    }
+
+    ssize_t ret = send(fd, out.c_str(), out.size(), 0);
+    if ( ret < 0 )
+    {
+        removeClient(i);
+        return ( true );
+    }
+
+    out.erase( 0, ret );
+    if ( out.empty() )
+        setPollOut(fd, false);
+
+    return ( false );
 }
