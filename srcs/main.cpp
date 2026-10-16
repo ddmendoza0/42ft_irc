@@ -41,6 +41,8 @@ int main( int argc, char *argv[] )
         server.init();
 
         signal(SIGPIPE, SIG_IGN);
+        signal( SIGINT, signalHandler );
+        signal( SIGQUIT, signalHandler );
 
         server.run();
     }

@@ -1,6 +1,9 @@
 // Server.cpp
 #include "Server.hpp"
 
+
+volatile sig_atomic_t g_run = 1;
+
 Server::Server( int port, const std::string& pwd ) : _port( port ), _pwd( pwd ), _listenFd( -1 ) {}
 
 Server::~Server( void )
@@ -55,10 +58,13 @@ void    Server::init( void )
 
 void    Server::run( void )
 {
-    while ( true )
+    while ( g_run )
     {
         int ret = poll(&_pfds[0], _pfds.size(), -1);
         
+        if ( ret < 0 && !g_run )
+            break ;
+
         if ( ret < 0 )
             throw std::runtime_error("Error: poll failed");
 
@@ -103,6 +109,8 @@ void    Server::run( void )
             }
         }
     }
+
+    std::cout << "Shutting down" << std::endl;
 }
 
 void    Server::acceptClient( void )
@@ -211,7 +219,7 @@ void    Server::handleCommand(Client& client, const std::string& line)
     //garantizado que recibe una linia completa :D
     if ( line == "QUIT" )
     {
-        reply( client, "ERROR : Closing link" );
+        reply( client, "ERROR :Closing link" );
         client.markForDisconnect();
         return ;
     }
@@ -287,4 +295,15 @@ bool    Server::checkDisconnect(size_t i)
     }
     return ( false );
 
+}
+
+
+
+
+
+
+void signalHandler( int sig )
+{
+    (void)sig;
+    g_run = 0;
 }

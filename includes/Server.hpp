@@ -8,6 +8,7 @@
 #include <vector>
 #include <fcntl.h>
 #include <cstring>
+#include <csignal>
 #include <unistd.h>
 #include <iostream>
 #include <stdexcept>
@@ -16,6 +17,10 @@
 #include <netinet/in.h>
 
 #include "Client.hpp"
+
+
+extern volatile sig_atomic_t g_run;
+
 
 class Server {
 
@@ -47,3 +52,5 @@ class Server {
 
 
 };
+
+void signalHandler( int sig );
