@@ -35,6 +35,7 @@ class Server {
         void    handleCommand(Client& client, const std::string& line);
         bool    writeToClient(size_t i);
         void    setPollOut(int fd, bool on);
+        bool    checkDisconnect(size_t i);
 
     public:
         Server(int port, const std::string& pwd);

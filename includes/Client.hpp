@@ -14,6 +14,7 @@ class Client {
         std::string _hostname;
         bool        _passOk;
         bool        _registered;
+        bool        _disconnect;
 
         Client(const Client& other);
         Client& operator=(const Client& other);
@@ -30,6 +31,7 @@ class Client {
         const std::string&  getHostname( void ) const;
         bool                isPassOk( void ) const;
         bool                isRegistered( void ) const;
+        bool                shouldDisconnect( void ) const;
 
         // setters
         void    setNick( const std::string& nick );
@@ -37,6 +39,7 @@ class Client {
         void    setRealname( const std::string& realname );
         void    setPassOk( bool value );
         void    setRegistered( bool value );
+        void    markForDisconnect( void );
 
         // buffers
         std::string&    getInBuf( void );
