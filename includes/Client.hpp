@@ -24,26 +24,26 @@ class Client {
         ~Client(void);
 
         // getters
-        int                 getFd( void ) const;
-        const std::string&  getNick( void ) const;
-        const std::string&  getUser( void ) const;
-        const std::string&  getRealname( void ) const;
-        const std::string&  getHostname( void ) const;
-        bool                isPassOk( void ) const;
-        bool                isRegistered( void ) const;
-        bool                shouldDisconnect( void ) const;
+        int                 getFd(void)             const;
+        const std::string&  getNick(void)           const;
+        const std::string&  getUser(void)           const;
+        const std::string&  getRealname(void)       const;
+        const std::string&  getHostname(void)       const;
+        bool                isPassOk(void)          const;
+        bool                isRegistered(void)      const;
+        bool                shouldDisconnect(void)  const;
 
         // setters
-        void    setNick( const std::string& nick );
-        void    setUser( const std::string& user );
-        void    setRealname( const std::string& realname );
-        void    setPassOk( bool value );
-        void    setRegistered( bool value );
-        void    markForDisconnect( void );
+        void    setNick(const std::string& nick);
+        void    setUser(const std::string& user);
+        void    setRealname(const std::string& realname);
+        void    setPassOk(bool value);
+        void    setRegistered(bool value);
+        void    markForDisconnect(void);
 
         // buffers
-        std::string&    getInBuf( void );
-        std::string&    getOutBuf( void );
-        void            appendInput( const std::string& data );
-        void            appendOutput( const std::string& data );
+        std::string&    getInBuf(void);
+        std::string&    getOutBuf(void);
+        void            appendInput(const std::string& data);
+        void            appendOutput(const std::string& data);
     };

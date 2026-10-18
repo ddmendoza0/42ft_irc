@@ -17,6 +17,10 @@ Server::~Server( void )
             close(_pfds[i].fd);
     }
 
+    for ( std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it )
+        delete it->second;
+    _channels.clear();
+
     for ( std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it  )
         delete it->second;
     _clients.clear();
@@ -200,6 +204,19 @@ void    Server::removeClient(size_t i)
 {
     int fd = _pfds[i].fd;
 
+    std::map<std::string, Channel*>::iterator chit = _channels.begin();
+    while ( chit != _channels.end() )
+    {
+        chit->second->removeMember( fd );
+        if ( chit->second->isEmpty() )
+        {
+            delete chit->second;
+            _channels.erase( chit++ );
+        }
+        else
+            ++chit;
+    }
+
     std::map<int, Client*>::iterator it = _clients.find(fd);
     if ( it != _clients.end() )
     {
@@ -208,22 +225,41 @@ void    Server::removeClient(size_t i)
     }
 
 
-    std::cout << _pfds[i].fd << " disconected" << std::endl;
+    std::cout << "Client fd " << _pfds[i].fd << " disconected" << std::endl;
 
     close(fd);
     _pfds.erase(_pfds.begin() + i);
 }
 
-void    Server::handleCommand(Client& client, const std::string& line)
+void    Server::handleCommand(Client& client, const std::string& line) //garantizado que recibe una linia completa :D
 {
-    //garantizado que recibe una linia completa :D
-    if ( line == "QUIT" )
+    // test channels
+    if ( line.compare( 0, 5, "JOIN " ) == 0 )
+    {
+        std::string name = line.substr( 5 );
+        Channel* chan = getChannel( name );
+        if ( chan == NULL )
+        {
+            chan = createChannel( name );
+            if ( chan == NULL )
+                return ;
+            chan->addOperator( client.getFd() );   // first joiner becomes operator
+        }
+        chan->addMember( client.getFd() );
+
+        std::ostringstream fd;
+        fd << client.getFd();
+        broadcast( *chan, "fd " + fd.str() + " joined " + chan->getName(), -1 );
+        return ;
+    }
+    
+    if ( line == "QUIT" ) //test quit
     {
         reply( client, "ERROR :Closing link" );
         client.markForDisconnect();
         return ;
     }
-    reply( client, "echo: " + line );
+    reply( client, "echo: " + line ); //test comm
 }
 
 void    Server::setPollOut(int fd, bool on)
@@ -297,11 +333,73 @@ bool    Server::checkDisconnect(size_t i)
 
 }
 
+void    Server::broadcast( Channel& chan, const std::string& msg, int exceptFd )
+{
+    const std::set<int> &chan_mem = chan.getMembers();
+    for ( std::set<int>::const_iterator mit = chan_mem.begin(); mit != chan_mem.end(); ++mit )
+    {
+        if ( *mit == exceptFd )
+            continue ;
+
+        std::map<int, Client*>::iterator cit = _clients.find(*mit);
+        if ( cit == _clients.end() )
+            continue ;
+
+        Client* client = cit->second;
+        reply(*client, msg);
+    }
+}
+
+std::string Server::toLower( const std::string& s )
+{
+    std::string result = s;
+    for ( size_t i = 0; i < result.size(); i++ )
+        result[i] = std::tolower( static_cast<unsigned char>( result[i] ) );
+    return ( result );
+}
+
+Channel*    Server::getChannel(const std::string& name) 
+{
+    std::map<std::string, Channel*>::iterator it = _channels.find(toLower(name));
+    if ( it == _channels.end() )
+        return ( NULL );
+    return ( it->second );
+}
+
+Channel*    Server::createChannel(const std::string& name) 
+{
+    Channel* channel = NULL;
+    try
+    {
+        channel = new Channel(name);
+        _channels[ toLower(name) ] = channel;
+    }
+    catch ( const std::bad_alloc& )
+    {
+        delete channel;
+        std::cerr << "Error: memory allocation error" << std::endl;
+        return ( NULL );
+    }
+
+    return ( channel );
+}
+
+Client*     Server::getClientByNick(const std::string& nick) 
+{
+    std::string key = toLower(nick);
+
+    std::map<int, Client*>::iterator it;
+    for ( it = _clients.begin(); it != _clients.end(); ++it )
+    {
+        if ( toLower(it->second->getNick()) ==  key )
+            return ( it->second );
+    } 
+    return ( NULL );   
+}
 
 
 
-
-
+// signal handle
 void signalHandler( int sig )
 {
     (void)sig;

@@ -8,7 +8,8 @@ OBJ_DIR  = objs
 
 SRCS		= $(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/Server.cpp \
-				$(SRC_DIR)/Client.cpp
+				$(SRC_DIR)/Client.cpp \
+				$(SRC_DIR)/Channel.cpp
 
 OBJS     = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 DEPS     = $(OBJS:.o=.d)
