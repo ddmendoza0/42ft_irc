@@ -6,6 +6,7 @@
 #include <poll.h>
 #include <string>
 #include <vector>
+#include <cctype>
 #include <fcntl.h>
 #include <cstring>
 #include <csignal>
@@ -16,7 +17,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include <sstream>
+#include <sstream> //temporary for testing
 
 #include "Client.hpp"
 #include "Channel.hpp"

@@ -252,7 +252,7 @@ void    Server::handleCommand(Client& client, const std::string& line) //garanti
         broadcast( *chan, "fd " + fd.str() + " joined " + chan->getName(), -1 );
         return ;
     }
-    
+
     if ( line == "QUIT" ) //test quit
     {
         reply( client, "ERROR :Closing link" );
@@ -391,6 +391,9 @@ Client*     Server::getClientByNick(const std::string& nick)
     std::map<int, Client*>::iterator it;
     for ( it = _clients.begin(); it != _clients.end(); ++it )
     {
+        if ( it->second->getNick().empty() )
+            continue ;
+
         if ( toLower(it->second->getNick()) ==  key )
             return ( it->second );
     } 
