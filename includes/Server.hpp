@@ -22,9 +22,25 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 
+// ERR_CLIENT
+#define ERR_NOTREGISTERED " :You have not registered"//		451
+
+// ERR_CMD
+#define ERR_NEEDMOREPARAMS " :Not enough parameters"//		461
+
+// ERR_CHANNEL
+#define ERR_NOSUCHCHANNEL " :No such channel"// 		403
+#define ERR_CHANNELISFULL " :Cannot join channel (+l)"//	471
+#define ERR_INVITEONLYCHAN " :Cannot join channel (+i)"//	473
+#define ERR_BADCHANNELKEY " :Cannot join channel (+k)"//	475
 
 extern volatile sig_atomic_t g_run;
 
+struct parsedCmd {
+
+	std::string		 cmd;
+	std::vector<std::string> params;
+};
 
 class Server {
 
@@ -54,6 +70,13 @@ class Server {
 
         std::string toLower( const std::string& s );
 
+//	CMDs
+		parsedCmd	parseCommand(const std::string &line);
+		void		handleJoin(Client& client, parsedCmd& cmd);
+//	ERR
+		void		ErrClient(Client& client, int code, const std::string& msg);
+		void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);
+		void		ErrChannel(Client& client, std::string chan, int code, const std::string& msg);
     public:
         Server(int port, const std::string& pwd);
         ~Server(void);

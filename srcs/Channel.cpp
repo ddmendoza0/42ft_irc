@@ -6,12 +6,13 @@ Channel::Channel( const std::string& name ) : _name( name ), _topic( "" ), _key(
 Channel::~Channel(void) {}
 
 // getters
-const std::string&  Channel::getName(void)           const { return ( _name ); }
-const std::string&  Channel::getTopic(void)          const { return ( _topic ); }
-const std::string&  Channel::getKey(void)            const { return ( _key ); }
-size_t              Channel::getLimit(void)          const { return ( _limit ); }
-bool                Channel::isInviteOnly(void)      const { return (_inviteOnly ); }
-bool                Channel::isTopicRestricted(void) const { return ( _topicRestricted ); }
+const std::string&	Channel::getName(void)			const { return ( _name ); }
+const std::string&	Channel::getTopic(void)			const { return ( _topic ); }
+const std::string&	Channel::getKey(void)			const { return ( _key ); }
+size_t 			Channel::getLimit(void)			const { return ( _limit ); }
+bool			Channel::isInviteOnly(void)		const { return (_inviteOnly ); }
+bool			Channel::hasKey(void)			const { return (!_key.empty()); }
+bool			Channel::isTopicRestricted(void)	const { return ( _topicRestricted ); }
 
 // setters
 void    Channel::setTopic(const std::string& topic) { _topic = topic; }

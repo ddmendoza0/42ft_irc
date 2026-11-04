@@ -8,10 +8,15 @@ class Channel {
     private:
         std::string     _name;
         std::string     _topic;
+
+	bool		_hasKey;
         std::string     _key;
+
         size_t          _limit;           // 0 = no limit
+
         bool            _inviteOnly;
         bool            _topicRestricted;
+
         std::set<int>   _members;
         std::set<int>   _operators;
         std::set<int>   _invited;
@@ -24,12 +29,13 @@ class Channel {
         ~Channel(void);
 
         // getters
-        const std::string&  getName(void)           const;
-        const std::string&  getTopic(void)          const;
-        const std::string&  getKey(void)            const;
-        size_t              getLimit(void)          const;
-        bool                isInviteOnly(void)      const;
-        bool                isTopicRestricted(void) const;
+        const std::string&	getName(void)		const;
+        const std::string&	getTopic(void)		const;
+        const std::string&	getKey(void)		const;
+        size_t			getLimit(void)		const;
+        bool			isInviteOnly(void)	const;
+	bool			hasKey(void)		const;
+        bool			isTopicRestricted(void)	const;
 
         // setters
         void    setTopic(const std::string& topic);
