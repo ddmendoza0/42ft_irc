@@ -270,6 +270,16 @@ void    Server::handleCommand(Client& client, const std::string& line)
 		ErrClient(client, 451, ERR_NOTREGISTERED);
 		return ;
 	}
+    if (cmd.cmd == "PASS")
+    {
+        handlePass(client, cmd);
+        return ;
+    }
+    if (cmd.cmd == "NICK")
+    {
+        handleNick(client, cmd);
+        return ;
+    }
 	if (cmd.cmd == "JOIN")
 	{
 		handleJoin(client, cmd);

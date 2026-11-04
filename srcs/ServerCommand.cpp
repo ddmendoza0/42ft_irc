@@ -12,6 +12,34 @@
 
 #include "Server.hpp"
 
+void    Server::handlePass(Client& client, parsedCmd& cmd)
+{
+	// Si el cliente aún no tiene nick, el estándar indica que se use "*" en las respuestas
+	std::string nick = client.getNick().empty() ? "*" : client.getNick();
+
+	if (client.isRegistered() || client.isPassOk())
+	{
+		reply(client, ":server 462 " + nick + " :Unauthorized command (already registered)");
+		return ;
+	}
+
+	if (cmd.params.empty())
+	{
+		reply(client, ":server 461 " + nick + " PASS :Not enough parameters");
+		return ;
+	}
+
+	if (cmd.params[0] == _pwd)
+	{
+		client.setPassOk(true);
+	}
+	else
+	{
+		reply(client, ":server 464 " + nick + " :Password incorrect");
+		client.markForDisconnect();
+	}
+}
+
 void	Server::handleJoin(Client& client, parsedCmd& cmd) {
 
 	if (!client.isRegistered())
@@ -76,4 +104,50 @@ void	Server::handleJoin(Client& client, parsedCmd& cmd) {
 		broadcast( *chan, msg.str(), -1 );
 	}
 	return ;
+}
+
+bool Server::isValidNick(const std::string& nick)
+{
+	if (nick.empty())
+		return false;
+	if (nick[0] == '#' || nick[0] == ':')
+		return false;
+	if (nick.find_first_of(" ,*?!@.") != std::string::npos)
+		return false;
+	return true;
+}
+
+void Server::handleNick(Client& client, parsedCmd& cmd)
+{
+	if (cmd.params.empty() || cmd.params[0].empty())
+	{
+		ErrClient(client, 431, ERR_NONICKNAMEGIVEN);
+		return ;
+	}
+
+	std::string newNick = cmd.params[0];
+
+	if (!isValidNick(newNick))
+	{
+		ErrClient(client, 432, " " + newNick + ERR_ERRONEUSNICKNAME);
+		return ;
+	}
+
+	Client* existing = getClientByNick(newNick);
+	if (existing != NULL && existing->getFd() != client.getFd())
+	{
+		ErrClient(client, 433, " " + newNick + ERR_NICKNAMEINUSE);
+		return ;
+	}
+
+	std::string oldNick = client.getNick();
+	client.setNick(newNick);
+
+	// Si el cliente ya estaba registrado y cambia el nick en mitad de la sesión,
+	// el servidor debe avisarle a él mismo para que su cliente IRC actualice la interfaz.
+	if (client.isRegistered())
+	{
+		std::string msg = ":" + oldNick + " NICK :" + newNick;
+		reply(client, msg);
+	}
 }

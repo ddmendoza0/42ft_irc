@@ -34,6 +34,11 @@
 #define ERR_INVITEONLYCHAN " :Cannot join channel (+i)"//	473
 #define ERR_BADCHANNELKEY " :Cannot join channel (+k)"//	475
 
+// ERR_NICK
+#define ERR_NONICKNAMEGIVEN " :No nickname given"//           431
+#define ERR_ERRONEUSNICKNAME " :Erroneous nickname"//         432
+#define ERR_NICKNAMEINUSE " :Nickname is already in use"//    433
+
 extern volatile sig_atomic_t g_run;
 
 struct parsedCmd {
@@ -73,6 +78,9 @@ class Server {
 //	CMDs
 		parsedCmd	parseCommand(const std::string &line);
 		void		handleJoin(Client& client, parsedCmd& cmd);
+        void        handlePass(Client& client, parsedCmd& cmd);
+        void		handleNick(Client& client, parsedCmd& cmd);
+		bool		isValidNick(const std::string& nick);
 //	ERR
 		void		ErrClient(Client& client, int code, const std::string& msg);
 		void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);
