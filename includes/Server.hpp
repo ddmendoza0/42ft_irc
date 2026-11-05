@@ -23,16 +23,20 @@
 #include "Channel.hpp"
 
 // ERR_CLIENT
-#define ERR_NOTREGISTERED " :You have not registered"//		451
+#define ERR_NOTREGISTERED	"You have not registered"//	451
 
 // ERR_CMD
-#define ERR_NEEDMOREPARAMS " :Not enough parameters"//		461
+#define ERR_NEEDMOREPARAMS	"Not enough parameters"//	461
 
 // ERR_CHANNEL
-#define ERR_NOSUCHCHANNEL " :No such channel"// 		403
-#define ERR_CHANNELISFULL " :Cannot join channel (+l)"//	471
-#define ERR_INVITEONLYCHAN " :Cannot join channel (+i)"//	473
-#define ERR_BADCHANNELKEY " :Cannot join channel (+k)"//	475
+#define RPL_NOTOPIC		"No topic is set"//		331
+#define RPL_ENDOFNAMES		"End of NAMES list"//		366
+#define ERR_NOSUCHCHANNEL 	"No such channel"// 		403
+#define ERR_NOTONCHANNEL  	"You're not on that channel"//	442
+#define ERR_CHANNELISFULL 	"Cannot join channel (+l)"//	471
+#define ERR_INVITEONLYCHAN	"Cannot join channel (+i)"//	473
+#define ERR_BADCHANNELKEY	"Cannot join channel (+k)"//	475
+#define ERR_CHANOPRIVSNEEDED	"You're not channel operator"//	482
 
 extern volatile sig_atomic_t g_run;
 
@@ -72,7 +76,10 @@ class Server {
 
 //	CMDs
 		parsedCmd	parseCommand(const std::string &line);
-		void		handleJoin(Client& client, parsedCmd& cmd);
+		void		welcomeMsg(Client& client, Channel* chan);
+		void		handleJoin(Client& client, const parsedCmd& cmd);
+		void		handleTopic(Client& client, const parsedCmd& cmd);
+		void		handleMode(Client& client, const parsedCmd& cmd);
 //	ERR
 		void		ErrClient(Client& client, int code, const std::string& msg);
 		void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);

@@ -231,7 +231,7 @@ void    Server::removeClient(size_t i)
     _pfds.erase(_pfds.begin() + i);
 }
 
-parsedCmd	Server::parseCommand(const std::string &line) {
+/*parsedCmd	Server::parseCommand(const std::string &line) {
 
 	std::istringstream	input(line);
 	std::string		token;
@@ -256,7 +256,7 @@ parsedCmd	Server::parseCommand(const std::string &line) {
 	}
 	return (command);
 }
-
+*//*
 void    Server::handleCommand(Client& client, const std::string& line)
 {
 	parsedCmd	cmd = parseCommand(line);
@@ -264,26 +264,31 @@ void    Server::handleCommand(Client& client, const std::string& line)
 //	Mientras no haya USER, NICK Y PASS comentar lineas 256 <--> 270 para probar CMDs
 //	Tambien hacer con comandos como JOIN que comprueban si client.isRegistered()
 //
-	if (cmd.cmd != "PASS" && cmd.cmd != "NICK" && cmd.cmd != "USER"
-			&& cmd.cmd != "QUIT" && !client.isRegistered())
-	{
-		ErrClient(client, 451, ERR_NOTREGISTERED);
-		return ;
-	}
+//	if (cmd.cmd != "PASS" && cmd.cmd != "NICK" && cmd.cmd != "USER"
+//			&& cmd.cmd != "QUIT" && !client.isRegistered())
+//	{
+//		ErrClient(client, 451, ERR_NOTREGISTERED);
+//		return ;
+//	}
 	if (cmd.cmd == "JOIN")
 	{
 		handleJoin(client, cmd);
 		return ;
 	}
+	if (cmd.cmd == "TOPIC")
+	{
+		handleTopic(client, cmd);
+		return ;
+	}
 	
-	if ( cmd.cmd == "QUIT" )
+	if ( cmd.cmd == "QUIT" )// No hecho solo test
 	{
 		reply( client, "ERROR :Closing link" );
 		client.markForDisconnect();
 		return ;
 	}
 	reply( client, "echo: " + line );
-}
+}*/
 
 void    Server::setPollOut(int fd, bool on)
 {

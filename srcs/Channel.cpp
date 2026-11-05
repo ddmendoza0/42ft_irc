@@ -1,17 +1,18 @@
 #include "Channel.hpp"
 
 
-Channel::Channel( const std::string& name ) : _name( name ), _topic( "" ), _key( "" ), _limit( 0 ), _inviteOnly( false ), _topicRestricted( false ) {}
+Channel::Channel( const std::string& name ) : _name( name ), _key( "" ), _topic( "" ), _limit( 0 ), _inviteOnly( false ), _topicRestricted( false ) {}
 
 Channel::~Channel(void) {}
 
 // getters
 const std::string&	Channel::getName(void)			const { return ( _name ); }
-const std::string&	Channel::getTopic(void)			const { return ( _topic ); }
 const std::string&	Channel::getKey(void)			const { return ( _key ); }
+const std::string&	Channel::getTopic(void)			const { return ( _topic ); }
 size_t 			Channel::getLimit(void)			const { return ( _limit ); }
 bool			Channel::isInviteOnly(void)		const { return (_inviteOnly ); }
 bool			Channel::hasKey(void)			const { return (!_key.empty()); }
+bool			Channel::hasTopic(void)			const { return (!_topic.empty()); }
 bool			Channel::isTopicRestricted(void)	const { return ( _topicRestricted ); }
 
 // setters
