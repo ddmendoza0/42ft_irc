@@ -23,20 +23,25 @@
 #include "Channel.hpp"
 
 // ERR_CLIENT
-#define ERR_NOTREGISTERED	"You have not registered"//	451
+#define ERR_NOTREGISTERED	"You have not registered"//		451
 
 // ERR_CMD
-#define ERR_NEEDMOREPARAMS	"Not enough parameters"//	461
+#define ERR_UNKNOWNCOMMAND	"Unknown command"//			421
+#define ERR_NEEDMOREPARAMS	"Not enough parameters"//		461
 
 // ERR_CHANNEL
-#define RPL_NOTOPIC		"No topic is set"//		331
-#define RPL_ENDOFNAMES		"End of NAMES list"//		366
-#define ERR_NOSUCHCHANNEL 	"No such channel"// 		403
-#define ERR_NOTONCHANNEL  	"You're not on that channel"//	442
-#define ERR_CHANNELISFULL 	"Cannot join channel (+l)"//	471
-#define ERR_INVITEONLYCHAN	"Cannot join channel (+i)"//	473
-#define ERR_BADCHANNELKEY	"Cannot join channel (+k)"//	475
-#define ERR_CHANOPRIVSNEEDED	"You're not channel operator"//	482
+#define RPL_NOTOPIC		"No topic is set"//			331
+#define RPL_ENDOFNAMES		"End of NAMES list"//			366
+#define ERR_NOSUCHNICK		"No such nick/channel"//		401
+#define ERR_NOSUCHCHANNEL 	"No such channel"// 			403
+#define ERR_USERNOTINCHANNEL	"They aren't on that channel"//		441
+#define ERR_NOTONCHANNEL  	"You're not on that channel"//		442
+#define ERR_USERONCHANNEL	"is already on channel"//		443
+#define ERR_CHANNELISFULL 	"Cannot join channel (+l)"//		471
+#define ERR_UNKNOWNMODE		"is unknown mode char to me for "//	472
+#define ERR_INVITEONLYCHAN	"Cannot join channel (+i)"//		473
+#define ERR_BADCHANNELKEY	"Cannot join channel (+k)"//		475
+#define ERR_CHANOPRIVSNEEDED	"You're not channel operator"//		482
 
 extern volatile sig_atomic_t g_run;
 
@@ -79,11 +84,15 @@ class Server {
 		void		welcomeMsg(Client& client, Channel* chan);
 		void		handleJoin(Client& client, const parsedCmd& cmd);
 		void		handleTopic(Client& client, const parsedCmd& cmd);
+		void		handleInvite(Client& client, const parsedCmd& cmd);
+		void		handleKick(Client& client, const parsedCmd& cmd);
 		void		handleMode(Client& client, const parsedCmd& cmd);
 //	ERR
 		void		ErrClient(Client& client, int code, const std::string& msg);
 		void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);
 		void		ErrChannel(Client& client, std::string chan, int code, const std::string& msg);
+		void		ErrMode(Client& client, std::string chan, char c);
+		void		ErrClientChannel(Client& client, const std::string& chan, const std::string& arg, int code);
     public:
         Server(int port, const std::string& pwd);
         ~Server(void);
