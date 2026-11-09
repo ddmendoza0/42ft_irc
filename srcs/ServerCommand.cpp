@@ -6,29 +6,32 @@
 /*   By: diespino <diespino@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/03 18:51:17 by diespino          #+#    #+#             */
-/*   Updated: 2026/11/06 19:32:18 by diespino         ###   ########.fr       */
+/*   Updated: 2026/11/09 15:59:02 by diespino         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-void	Server::welcomeMsg(Client& client, Channel* chan) {
+std::string	Server::clientPrefix(Client& client) {
 
-//	Flata hacere prefix de client --> :nick!user@hostname
-//	msg << clientPrefix(client) << " JOIN " << chan->getName();
-//	Enviar mensaje de JOINED a todos los clientes (incluido al nuevo miembro) del CHANNEL
-//	Hace falta mandar tambien TOPIC y los nombres de los integrante del CHANNEL???
+	std::ostringstream      prefix;
+
+	prefix << ":" << client.getNick() << "!" << client.getUser() << "@" << client.getHostname();
+	return (prefix.str());
+}
+
+void	Server::welcomeMsg(Client& client, Channel* chan) {
 
 	std::ostringstream	msg;
 
-	msg << ":nick!user@hostname" << " JOIN " << chan->getName();
+	msg << clientPrefix(client) << " JOIN " << chan->getName();
 	broadcast( *chan, msg.str(), -1 );
-//
+
 	if (chan->hasTopic())
 		ErrChannel(client, chan->getName(), 332, chan->getTopic());
 	else
 		ErrChannel(client, chan->getName(), 331, RPL_NOTOPIC);
-//	
+	
 	std::ostringstream      names;
 	const std::set<int>&	members = chan->getMembers();
 	for (std::set<int>::const_iterator it = members.begin();
@@ -46,13 +49,129 @@ void	Server::welcomeMsg(Client& client, Channel* chan) {
 	ErrChannel(client, chan->getName(), 366, RPL_ENDOFNAMES);
 }
 
+bool Server::isValidNick(const std::string& nick)
+{
+	if (nick.empty())
+		return false;
+	if (nick[0] == '#' || nick[0] == ':')
+		return false;
+	if (nick.find_first_of(" ,*?!@.") != std::string::npos)
+		return false;
+	return true;
+}
+
+void Server::checkRegistration(Client& client)
+{
+	if (!client.isRegistered() && client.isPassOk() 
+		&& !client.getNick().empty() && !client.getUser().empty())
+	{
+		client.setRegistered(true);
+
+		std::string nick = client.getNick();
+//		std::string user = client.getUser();
+//		std::string host = client.getHostname();
+
+//		reply(client, ":server 001 " + nick + " :Welcome to the Internet Relay Network " + nick + "!" + user + "@" + host);
+		reply(client, ":server 001 " + nick + " :Welcome to the Internet Relay Network " + clientPrefix(client));
+		reply(client, ":server 002 " + nick + " :Your host is server, running version 1.0");
+		reply(client, ":server 003 " + nick + " :This server was created today");
+		reply(client, ":server 004 " + nick + " server 1.0 o o");
+	}
+}
+
+void Server::handleUser(Client& client, parsedCmd& cmd)
+{
+	if (client.isRegistered())
+	{
+		ErrClient(client, 462, ERR_ALREADYREGISTRED);
+		return ;
+	}
+
+	// USER exige 4 parámetros: <username> <hostname> <servername> :<realname>
+	if (cmd.params.size() < 4)
+	{
+		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
+		return ;
+	}
+
+	client.setUser(cmd.params[0]);
+	client.setRealname(cmd.params[3]);
+
+	checkRegistration(client);
+}
+
+void Server::handleNick(Client& client, parsedCmd& cmd)
+{
+	if (cmd.params.empty() || cmd.params[0].empty())
+	{
+		ErrClient(client, 431, ERR_NONICKNAMEGIVEN);
+		return ;
+	}
+
+	std::string newNick = cmd.params[0];
+
+	if (!isValidNick(newNick))
+	{
+		ErrClient(client, 432, " " + newNick + ERR_ERRONEUSNICKNAME);
+		return ;
+	}
+
+	Client* existing = getClientByNick(newNick);
+	if (existing != NULL && existing->getFd() != client.getFd())
+	{
+		ErrClient(client, 433, " " + newNick + ERR_NICKNAMEINUSE);
+		return ;
+	}
+
+	std::string oldNick = client.getNick();
+	client.setNick(newNick);
+
+	// Si el cliente ya estaba registrado y cambia el nick en mitad de la sesión,
+	// el servidor debe avisarle a él mismo para que su cliente IRC actualice la interfaz.
+	if (client.isRegistered())
+	{
+		std::string msg = ":" + oldNick + " NICK :" + newNick;
+		reply(client, msg);
+	}
+	else
+		checkRegistration(client);
+}
+
+void    Server::handlePass(Client& client, parsedCmd& cmd)
+{
+	// Si el cliente aún no tiene nick, el estándar indica que se use "*" en las respuestas
+	std::string nick = client.getNick().empty() ? "*" : client.getNick();
+
+	if (client.isRegistered() || client.isPassOk())
+	{
+		reply(client, ":server 462 " + nick + " :Unauthorized command (already registered)");
+		return ;
+	}
+
+	if (cmd.params.empty())
+	{
+		reply(client, ":server 461 " + nick + " PASS :Not enough parameters");
+		return ;
+	}
+
+	if (cmd.params[0] == _pwd)
+	{
+		client.setPassOk(true);
+	}
+	else
+	{
+		reply(client, ":server 464 " + nick + " :Password incorrect");
+		client.markForDisconnect();
+	}
+}
+
 void	Server::handleJoin(Client& client, const parsedCmd& cmd) {
 
-//	if (!client.isRegistered())
-//	{
-//		ErrClient(client, 451, ERR_NOTREGISTERED);
-//		return ;
-//	}
+	if (!client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
 	if (cmd.params.empty() || cmd.params[0].empty())
 	{
 		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
@@ -110,11 +229,11 @@ void	Server::handleJoin(Client& client, const parsedCmd& cmd) {
 
 void	Server::handleInvite(Client& client, const parsedCmd& cmd) {
 
-//	if (!client.isRegistered())
-//	{
-//		ErrClient(client, 451, ERR_NOTREGISTERED);
-//		return ;
-//	}
+	if (!client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
 	if (cmd.params.size() != 2 || cmd.params[0].empty() || cmd.params[1].empty())
 	{
 		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
@@ -163,8 +282,7 @@ void	Server::handleInvite(Client& client, const parsedCmd& cmd) {
 	std::ostringstream	target_msg;
 	std::ostringstream	msg;
 	
-//	target_msg << clientPrefix(client) << " INVITE " << target->getNick() << " " << chan->getName();
-	target_msg << ":nick!user@hostname" << " INVITE " << target->getNick() << " " << chan->getName();
+	target_msg << clientPrefix(client) << " INVITE " << target->getNick() << " " << chan->getName();
 	msg << ":server 341 " << client.getNick() << " " << target->getNick() << " " << chan->getName();
 
 	reply(*target, target_msg.str());
@@ -175,12 +293,12 @@ void	Server::handleKick(Client& client, const parsedCmd& cmd) {
 
 //	--> KICK #42 ALICE :Motivo
 //
-//	if (!client.isRegistered())
-//	{
-//		ErrClient(client, 451, ERR_NOTREGISTERED);
-//		return ;
-//	}
-	if (cmd.params.size() > 3  || cmd.params[0].empty() || cmd.params[1].empty())
+	if (!client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
+	if (cmd.params.size() > 3 || cmd.params.size() < 2 || cmd.params[0].empty() || cmd.params[1].empty())
 	{
 		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
 		return ;
@@ -216,18 +334,17 @@ void	Server::handleKick(Client& client, const parsedCmd& cmd) {
 		ErrCmd(client, 401, cmd.params[1], ERR_NOSUCHNICK);
 		return ;
 	}
-	if (chan->isMember(target->getFd()))
+	if (!chan->isMember(target->getFd()))
 	{
-		ErrClientChannel(client, chan->getName(), cmd.params[1], 443);
+		ErrClientChannel(client, chan->getName(), cmd.params[1], 442);
 		return ;
 	}
 	
 	std::ostringstream	msg;
 	
-//	msg << ":nick!user@hostname" << " KICK " << chan->getName() << " " << target->getNick();
-	msg << ":nick!user@hostname" << " KICK " << chan->getName() << " " << target->getNick();
+	msg << clientPrefix(client) << " KICK " << chan->getName() << " " << target->getNick();
 	
-	if (!cmd.params[2].empty())
+	if (cmd.params.size() == 3 && !cmd.params[2].empty())
 		msg << " :" << cmd.params[2];
 	broadcast( *chan, msg.str(), -1 );
 
@@ -236,11 +353,11 @@ void	Server::handleKick(Client& client, const parsedCmd& cmd) {
 
 void	Server::handleTopic(Client& client, const parsedCmd& cmd) {
 
-//	if (!client.isRegistered())
-//	{
-//		ErrClient(client, 451, ERR_NOTREGISTERED);
-//		return ;
-//	}
+	if (!client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
 	if (cmd.params.empty() || cmd.params[0].empty() || cmd.params.size() > 2)
 	{
 		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
@@ -285,7 +402,7 @@ void	Server::handleTopic(Client& client, const parsedCmd& cmd) {
 
 		chan->setTopic(cmd.params[1]);
 
-		msg << ":nick!user@hostname" << " TOPIC " << chan->getName() << " :" << chan->getTopic();
+		msg << clientPrefix(client) << " TOPIC " << chan->getName() << " :" << chan->getTopic();
 		broadcast( *chan, msg.str(), -1 );
 		return ;
 	}
@@ -293,11 +410,11 @@ void	Server::handleTopic(Client& client, const parsedCmd& cmd) {
 
 void	Server::handleMode(Client& client, const parsedCmd& cmd) {
 
-//	if (!client.isRegistered())
-//	{
-//		ErrClient(client, 451, ERR_NOTREGISTERED);
-//		return ;
-//	}
+	if (!client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
 	if (cmd.params.empty() || cmd.params[0].empty())
 	{
 		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
@@ -461,6 +578,7 @@ void	Server::handleMode(Client& client, const parsedCmd& cmd) {
 					chan->addOperator(target->getFd());
 				else
 					chan->removeOperator(target->getFd());
+				continue ;
 			}
 			else if (cmd.params[1][i] == 'l')
 			{
@@ -485,7 +603,7 @@ void	Server::handleMode(Client& client, const parsedCmd& cmd) {
 					chan->setLimit(0);
 				continue ;
 			}
-			ErrMode(client, chan->getName(), cmd.params[1][i]);
+			ErrMode(client, chan->getName(), cmd.params[1][i]);//472
 			return ;
 		}
 		return ;
@@ -522,15 +640,27 @@ void    Server::handleCommand(Client& client, const std::string& line)
 {
 	parsedCmd	cmd = parseCommand(line);
 
-//	Mientras no haya USER, NICK Y PASS comentar lineas 199 <--> 204 para probar CMDs
-//	Tambien hacer con comandos como JOIN que comprueban si client.isRegistered()
-//
-//	if (cmd.cmd != "PASS" && cmd.cmd != "NICK" && cmd.cmd != "USER"
-//			&& cmd.cmd != "QUIT" && !client.isRegistered())
-//	{
-//		ErrClient(client, 451, ERR_NOTREGISTERED);
-//		return ;
-//	}
+	if (cmd.cmd != "PASS" && cmd.cmd != "NICK" && cmd.cmd != "USER"
+			&& cmd.cmd != "QUIT" && !client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
+	if (cmd.cmd == "USER")
+	{
+		handleUser(client, cmd);
+		return ;
+	}
+	if (cmd.cmd == "NICK")
+	{
+		handleNick(client, cmd);
+		return ;
+	}
+	if (cmd.cmd == "PASS")
+	{
+		handlePass(client, cmd);
+		return ;
+	}
 	if (cmd.cmd == "JOIN")
 	{
 		handleJoin(client, cmd);
@@ -556,7 +686,9 @@ void    Server::handleCommand(Client& client, const std::string& line)
 		handleMode(client, cmd);
 		return ;
 	}
-	
+//	FALTA:
+//		[ ] PART
+//		[ ] QUIT
 	if ( cmd.cmd == "QUIT" )// No hecho solo test
 	{
 		reply( client, "ERROR :Closing link" );
