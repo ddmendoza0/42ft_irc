@@ -230,7 +230,7 @@ void    Server::removeClient(size_t i)
     close(fd);
     _pfds.erase(_pfds.begin() + i);
 }
-
+/*
 parsedCmd	Server::parseCommand(const std::string &line) {
 
 	std::istringstream	input(line);
@@ -294,7 +294,7 @@ void    Server::handleCommand(Client& client, const std::string& line)
 	}
 	reply( client, "echo: " + line );
 }
-
+*/
 void    Server::setPollOut(int fd, bool on)
 {
     for ( size_t i = 0; i < _pfds.size(); i++ )
