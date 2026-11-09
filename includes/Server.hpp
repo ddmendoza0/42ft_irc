@@ -27,7 +27,13 @@
 
 // ERR_CMD
 #define ERR_NEEDMOREPARAMS " :Not enough parameters"//		461
+#define ERR_ALREADYREGISTRED " :Unauthorized command (already registered)"// 462
+#define ERR_UNKNOWNCOMMAND " :Unknown command"//		421
 
+// RPL
+#define RPL_NOTOPIC " :No topic is set"//			331
+#define RPL_ENDOFNAMES " :End of /NAMES list"//		366		      
+					  
 // ERR_CHANNEL
 #define ERR_NOSUCHCHANNEL " :No such channel"// 		403
 #define ERR_CHANNELISFULL " :Cannot join channel (+l)"//	471
@@ -77,10 +83,13 @@ class Server {
 
 //	CMDs
 		parsedCmd	parseCommand(const std::string &line);
+	void		welcomeMsg(Client& client, Channel* chan);
 		void		handleJoin(Client& client, parsedCmd& cmd);
         void        handlePass(Client& client, parsedCmd& cmd);
         void		handleNick(Client& client, parsedCmd& cmd);
-		bool		isValidNick(const std::string& nick);
+	void		handleUser(Client& client, parsedCmd& cmd);     									
+	void		checkRegistration(Client& client);
+	bool		isValidNick(const std::string& nick);
 //	ERR
 		void		ErrClient(Client& client, int code, const std::string& msg);
 		void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);

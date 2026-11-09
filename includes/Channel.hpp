@@ -11,7 +11,7 @@ class Channel {
 
 	bool		_hasKey;
         std::string     _key;
-
+	bool		_hasTopic;
         size_t          _limit;           // 0 = no limit
 
         bool            _inviteOnly;
@@ -35,6 +35,7 @@ class Channel {
         size_t			getLimit(void)		const;
         bool			isInviteOnly(void)	const;
 	bool			hasKey(void)		const;
+	bool			hasTopic(void)		const;
         bool			isTopicRestricted(void)	const;
 
         // setters

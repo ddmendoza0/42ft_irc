@@ -12,6 +12,7 @@ const std::string&	Channel::getKey(void)			const { return ( _key ); }
 size_t 			Channel::getLimit(void)			const { return ( _limit ); }
 bool			Channel::isInviteOnly(void)		const { return (_inviteOnly ); }
 bool			Channel::hasKey(void)			const { return (!_key.empty()); }
+bool			Channel::hasTopic(void)			const { return (!_topic.empty()); }
 bool			Channel::isTopicRestricted(void)	const { return ( _topicRestricted ); }
 
 // setters
