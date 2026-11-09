@@ -6,7 +6,7 @@
 /*   By: diespino <diespino@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/04 15:00:10 by diespino          #+#    #+#             */
-/*   Updated: 2026/11/06 19:32:16 by diespino         ###   ########.fr       */
+/*   Updated: 2026/11/09 18:58:45 by diespino         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ void	Server::ErrClient(Client& client, int code, const std::string& msg) {
 	std::ostringstream	output;
 	std::string		nick = client.getNick();
 
-	output << ":server ";
+	output << ":irc.serv ";
 	if (nick.empty())
 		nick = "*";
 	if (code < 10)
@@ -35,7 +35,7 @@ void	Server::ErrCmd(Client& client, int code, std::string cmd, const std::string
 	std::ostringstream	output;
 	std::string		nick = client.getNick();
 
-	output << ":server ";
+	output << ":irc.serv ";
 	if (nick.empty())
 		nick = "*";
 	if (code < 10)
@@ -53,7 +53,7 @@ void	Server::ErrChannel(Client& client, std::string chan, int code, const std::s
 	std::ostringstream	output;
 	std::string		nick = client.getNick();
 
-	output << ":server ";
+	output << ":irc.serv ";
 	if (nick.empty())
 		nick = "*";
 	if (code < 10)
@@ -74,7 +74,7 @@ void	Server::ErrMode(Client& client, std::string chan, char c) {
 	std::ostringstream	output;
 	std::string		nick = client.getNick();
 
-	output << ":server 472 ";
+	output << ":irc.serv 472 ";
 
 	if (nick.empty())
 		nick = "*";
@@ -89,7 +89,7 @@ void	Server::ErrClientChannel(Client& client, const std::string& chan, const std
 	std::ostringstream	output;
 	std::string		nick = client.getNick();
 
-	output << ":server " << code << " ";
+	output << ":irc.serv " << code << " ";
 
 	if (nick.empty())
 		nick = "*";

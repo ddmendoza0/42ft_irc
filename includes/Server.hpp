@@ -71,7 +71,7 @@ class Server {
         void    acceptClient(void);
         bool    readFromClient(size_t i);
         void    removeClient(size_t i);
-        void    handleCommand(Client& client, const std::string& line);
+	void	deleteChannel(const std::string& name);
         bool    writeToClient(size_t i);
         void    setPollOut(int fd, bool on);
         bool    checkDisconnect(size_t i);
@@ -84,27 +84,33 @@ class Server {
         std::string toLower( const std::string& s );
 
 //	CMDs
-		parsedCmd	parseCommand(const std::string &line);
-		std::string	clientPrefix(Client& client);
-		void		welcomeMsg(Client& client, Channel* chan);
+	std::string	clientPrefix(Client& client);
+	void		welcomeMsg(Client& client, Channel* chan);
+	void		handleCommand(Client& client, const std::string& line);
+	parsedCmd	parseCommand(const std::string &line);
+
 //	CLIENT
-	        void		handlePass(Client& client, parsedCmd& cmd);
-	        void		handleNick(Client& client, parsedCmd& cmd);
-		void		handleUser(Client& client, parsedCmd& cmd);     									
-		void		checkRegistration(Client& client);
-		bool		isValidNick(const std::string& nick);
+        void		handlePass(Client& client, parsedCmd& cmd);
+        void		handleNick(Client& client, parsedCmd& cmd);
+	void		handleUser(Client& client, parsedCmd& cmd);     									
+	void		checkRegistration(Client& client);
+	bool		isValidNick(const std::string& nick);
+
 //	CHANNEL
-		void		handleJoin(Client& client, const parsedCmd& cmd);
-		void		handleTopic(Client& client, const parsedCmd& cmd);
-		void		handleInvite(Client& client, const parsedCmd& cmd);
-		void		handleKick(Client& client, const parsedCmd& cmd);
-		void		handleMode(Client& client, const parsedCmd& cmd);
+	void		handleJoin(Client& client, const parsedCmd& cmd);
+	void		handlePart(Client& client, const parsedCmd& cmd);
+	void		handleTopic(Client& client, const parsedCmd& cmd);
+	void		handleInvite(Client& client, const parsedCmd& cmd);
+	void		handleKick(Client& client, const parsedCmd& cmd);
+	void		handleMode(Client& client, const parsedCmd& cmd);
+
 //	ERR
-		void		ErrClient(Client& client, int code, const std::string& msg);
-		void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);
-		void		ErrChannel(Client& client, std::string chan, int code, const std::string& msg);
-		void		ErrMode(Client& client, std::string chan, char c);
-		void		ErrClientChannel(Client& client, const std::string& chan, const std::string& arg, int code);
+	void		ErrClient(Client& client, int code, const std::string& msg);
+	void		ErrCmd(Client& client, int code, std::string cmd, const std::string& msg);
+	void		ErrChannel(Client& client, std::string chan, int code, const std::string& msg);
+	void		ErrMode(Client& client, std::string chan, char c);
+	void		ErrClientChannel(Client& client, const std::string& chan, const std::string& arg, int code);
+
     public:
         Server(int port, const std::string& pwd);
         ~Server(void);
