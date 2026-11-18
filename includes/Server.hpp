@@ -98,7 +98,8 @@ class Server {
         void		handlePass(Client& client, parsedCmd& cmd);
         void		handleNick(Client& client, parsedCmd& cmd);
 	void		handleUser(Client& client, parsedCmd& cmd);
-	void		handlePrivmsg(Client& client, const parsedCmd& cmd);	
+	void		handlePrivmsg(Client& client, const parsedCmd& cmd);
+	void		handleQuit(Client& client, const parsedCmd& cmd);	
 	void		checkRegistration(Client& client);
 	bool		isValidNick(const std::string& nick);
 

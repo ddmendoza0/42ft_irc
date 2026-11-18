@@ -228,6 +228,44 @@ void	Server::handlePrivmsg(Client& client, const parsedCmd& cmd)
 	}
 }
 
+void	Server::handleQuit(Client& client, const parsedCmd& cmd)
+{
+	std::string reason = "Client Quit";
+	if (!cmd.params.empty() && !cmd.params[0].empty())
+		reason = cmd.params[0];
+
+	if (client.isRegistered())
+	{
+		std::string quitMsg = clientPrefix(client) + " QUIT :" + reason;
+		std::set<int> notifiedFds;
+
+		for (std::map<std::string, Channel*>::iterator chit = _channels.begin();
+				chit != _channels.end(); ++chit)
+		{
+			Channel* chan = chit->second;
+			if (!chan->isMember(client.getFd()))
+				continue ;
+
+			const std::set<int>& members = chan->getMembers();
+			for (std::set<int>::const_iterator mit = members.begin();
+					mit != members.end(); ++mit)
+			{
+				if (*mit == client.getFd() || notifiedFds.find(*mit) != notifiedFds.end())
+					continue ;
+				std::map<int, Client*>::iterator cit = _clients.find(*mit);
+				if (cit != _clients.end())
+				{
+					reply(*(cit->second), quitMsg);
+					notifiedFds.insert(*mit);
+				}
+			}
+		}
+	}
+
+	reply(client, "ERROR :Closing link: " + client.getHostname() + " (" + reason + ")");
+	client.markForDisconnect();
+}
+
 void	Server::handleJoin(Client& client, const parsedCmd& cmd) {
 
 	if (!client.isRegistered())
@@ -804,8 +842,7 @@ void    Server::handleCommand(Client& client, const std::string& line)
 //		[ ] QUIT
 	if ( cmd.cmd == "QUIT" )// No hecho solo test
 	{
-		reply( client, "ERROR :Closing link" );
-		client.markForDisconnect();
+		handleQuit(client, cmd);
 		return ;
 	}
 	else
