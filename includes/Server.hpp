@@ -27,6 +27,7 @@
 #define ERR_ERRONEUSNICKNAME	"Erroneous nickname"//				432
 #define ERR_NICKNAMEINUSE	"Nickname is already in use"//			433
 #define ERR_NOTREGISTERED	"You have not registered"//			451
+#define ERR_PASSWDMISMATCH	"Password incorrect"//				464
 
 // ERR_CMD
 #define ERR_UNKNOWNCOMMAND	"Unknown command"//				421

@@ -126,48 +126,64 @@ void Server::handleNick(Client& client, parsedCmd& cmd)
 		return ;
 	}
 
-	std::string oldNick = client.getNick();
+	if (client.getNick() == newNick)
+		return ;
+
+	std::string msg = clientPrefix(client) + " NICK :" + newNick;
 	client.setNick(newNick);
 
-//	Si el cliente ya estaba registrado y cambia el nick en mitad de la sesión,
-//	el servidor debe avisarle a él mismo para que su cliente IRC actualice la interfaz.
-//
-//	Debe mandar aviso a todos los CHANNELs que pertenece
-//
 	if (client.isRegistered())
 	{
-		std::string msg = ":" + oldNick + " NICK :" + newNick;
 		reply(client, msg);
+
+		std::set<int> notifiedFds;
+		notifiedFds.insert(client.getFd());
+
+		for (std::map<std::string, Channel*>::iterator chit = _channels.begin();
+				chit != _channels.end(); ++chit)
+		{
+			Channel* chan = chit->second;
+			if (!chan->isMember(client.getFd()))
+				continue ;
+
+			const std::set<int>& members = chan->getMembers();
+			for (std::set<int>::const_iterator mit = members.begin();
+					mit != members.end(); ++mit)
+			{
+				if (notifiedFds.find(*mit) != notifiedFds.end())
+					continue ;
+				std::map<int, Client*>::iterator cit = _clients.find(*mit);
+				if (cit != _clients.end())
+				{
+					reply(*(cit->second), msg);
+					notifiedFds.insert(*mit);
+				}
+			}
+		}
 	}
 	else
 		checkRegistration(client);
 }
 
-void    Server::handlePass(Client& client, parsedCmd& cmd)
+void Server::handlePass(Client& client, parsedCmd& cmd)
 {
-//	Si el cliente aún no tiene nick, el estándar indica que se use "*" en las respuestas
-	std::string nick = client.getNick().empty() ? "*" : client.getNick();
-
 	if (client.isRegistered() || client.isPassOk())
 	{
-		reply(client, ":irc.serv 462 " + nick + " :Unauthorized command (already registered)");
+		ErrClient(client, 462, ERR_ALREADYREGISTRED);
 		return ;
 	}
 
-	if (cmd.params.empty())
+	if (cmd.params.empty() || cmd.params[0].empty())
 	{
-//		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
-		reply(client, ":irc.serv 461 " + nick + " PASS :Not enough parameters");
+		ErrCmd(client, 461, cmd.cmd, ERR_NEEDMOREPARAMS);
 		return ;
 	}
 
 	if (cmd.params[0] == _pwd)
-	{
 		client.setPassOk(true);
-	}
 	else
 	{
-		reply(client, ":irc.serv 464 " + nick + " :Password incorrect");
+		ErrClient(client, 464, ERR_PASSWDMISMATCH);
 		client.markForDisconnect();
 	}
 }
