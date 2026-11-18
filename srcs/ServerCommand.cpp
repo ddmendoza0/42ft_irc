@@ -172,6 +172,62 @@ void    Server::handlePass(Client& client, parsedCmd& cmd)
 	}
 }
 
+void	Server::handlePrivmsg(Client& client, const parsedCmd& cmd)
+{
+	if (!client.isRegistered())
+	{
+		ErrClient(client, 451, ERR_NOTREGISTERED);
+		return ;
+	}
+	if (cmd.params.empty() || cmd.params[0].empty())
+	{
+		ErrClient(client, 411, ERR_NORECIPIENT);
+		return ;
+	}
+	if (cmd.params.size() < 2 || cmd.params[1].empty())
+	{
+		ErrClient(client, 412, ERR_NOTEXTTOSEND);
+		return ;
+	}
+
+	std::istringstream	targets(cmd.params[0]);
+	std::string		target;
+	const std::string&	text = cmd.params[1];
+
+	while (std::getline(targets, target, ','))
+	{
+		if (target.empty())
+			continue ;
+		if (target[0] == '#')
+		{
+			Channel* chan = getChannel(target);
+			if (chan == NULL)
+			{
+				ErrCmd(client, 401, target, ERR_NOSUCHNICK);
+				continue ;
+			}
+			if (!chan->isMember(client.getFd()))
+			{
+				ErrChannel(client, chan->getName(), 404, ERR_CANNOTSENDTOCHAN);
+				continue ;
+			}
+			std::string msg = clientPrefix(client) + " PRIVMSG " + chan->getName() + " :" + text;
+			broadcast(*chan, msg, client.getFd());
+		}
+		else
+		{
+			Client* dest = getClientByNick(target);
+			if (dest == NULL)
+			{
+				ErrCmd(client, 401, target, ERR_NOSUCHNICK);
+				continue ;
+			}
+			std::string msg = clientPrefix(client) + " PRIVMSG " + dest->getNick() + " :" + text;
+			reply(*dest, msg);
+		}
+	}
+}
+
 void	Server::handleJoin(Client& client, const parsedCmd& cmd) {
 
 	if (!client.isRegistered())
@@ -708,6 +764,11 @@ void    Server::handleCommand(Client& client, const std::string& line)
 		handlePass(client, cmd);
 		return ;
 	}
+	if (cmd.cmd == "PRIVMSG")
+	{
+		handlePrivmsg(client, cmd);
+		return ;
+	}	
 	if (cmd.cmd == "JOIN")
 	{
 		handleJoin(client, cmd);

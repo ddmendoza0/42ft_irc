@@ -33,6 +33,11 @@
 #define ERR_ALREADYREGISTRED	"Unauthorized command (already registered)"//	462
 #define ERR_NEEDMOREPARAMS	"Not enough parameters"//			461
 
+// ERR_PRIVMSG
+#define ERR_NORECIPIENT		"No recipient given (PRIVMSG)"//		411
+#define ERR_NOTEXTTOSEND	"No text to send"//				412
+#define ERR_CANNOTSENDTOCHAN	"Cannot send to channel"//			404
+
 // ERR_CHANNEL
 #define RPL_NOTOPIC		"No topic is set"//				331
 #define RPL_ENDOFNAMES		"End of NAMES list"//				366
@@ -92,7 +97,8 @@ class Server {
 //	CLIENT
         void		handlePass(Client& client, parsedCmd& cmd);
         void		handleNick(Client& client, parsedCmd& cmd);
-	void		handleUser(Client& client, parsedCmd& cmd);     									
+	void		handleUser(Client& client, parsedCmd& cmd);
+	void		handlePrivmsg(Client& client, const parsedCmd& cmd);	
 	void		checkRegistration(Client& client);
 	bool		isValidNick(const std::string& nick);
 
